@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StaffReach — RCSD Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans','Helvetica Neue',sans-serif;background:#f0f4f8;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px 12px 48px}
+  input,textarea,button,select{font-family:inherit}
+  textarea:focus,input:focus{outline:none}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+  @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes toastSlide{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .sr-row:hover{background:#f8fafc!important}
+  .sr-tab:hover{background:#f1f5f9}
+  .sr-btn-primary:hover{opacity:0.88}
+  .loc-btn:hover{opacity:0.8}
+  .preset-btn:hover{background:#e2e8f0!important}
+</style>
+</head>
+<body>
+
+<!-- Demo banner -->
+<div id="banner" style="width:100%;max-width:480px;margin-bottom:10px;background:linear-gradient(135deg,#1e3a5f,#2d6a9f);border-radius:10px;padding:9px 16px;display:flex;align-items:center;justify-content:space-between">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;animation:pulse 2s infinite"></span>
+    <span style="font-size:12px;font-weight:700;color:#e0eeff;letter-spacing:0.05em">STAFFREACH DEMO</span>
+  </div>
+  <span style="font-size:11px;color:#93b8d8">Fictional staff · No real SMS sent</span>
+</div>
+
+<!-- App shell -->
+<div id="app" style="width:100%;max-width:480px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.09),0 1px 4px rgba(0,0,0,0.04);border:1px solid #e2e8f0"></div>
+
+<!-- Feature cards -->
+<div id="features" style="width:100%;max-width:480px;margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+
+<!-- Toast -->
+<div id="toast" style="display:none;position:fixed;bottom:24px;right:16px;max-width:340px;background:#0f172a;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,0.2);animation:toastSlide 0.25s ease;z-index:999;line-height:1.5"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────
+const STAFF = [
+  {id:1,  first:"Marcus",  last:"Webb",     role:"Ophthalmic Tech", loc:"La Jolla",  days:[1,2,3,4,5], start:"07:30", end:"16:30", color:"#6366f1"},
+  {id:2,  first:"Diana",   last:"Reyes",    role:"Scribe",          loc:"La Jolla",  days:[1,2,3,4,5], start:"07:30", end:"16:00", color:"#0ea5e9"},
+  {id:3,  first:"Priya",   last:"Sharma",   role:"Front Desk",      loc:"La Jolla",  days:[1,2,3,4,5], start:"08:00", end:"17:00", color:"#10b981"},
+  {id:4,  first:"Connor",  last:"Blake",    role:"Ophthalmic Tech", loc:"La Jolla",  days:[2,3,4,5,6], start:"08:00", end:"17:00", color:"#f59e0b"},
+  {id:5,  first:"Amara",   last:"Osei",     role:"Scribe",          loc:"La Jolla",  days:[1,2,3,4,5], start:"09:00", end:"18:00", color:"#ec4899"},
+  {id:6,  first:"Tyler",   last:"Nguyen",   role:"Ophthalmic Tech", loc:"Poway",     days:[1,2,3,4,5], start:"07:30", end:"16:30", color:"#8b5cf6"},
+  {id:7,  first:"Fatima",  last:"Hassan",   role:"Front Desk",      loc:"Poway",     days:[1,2,3,4,5], start:"08:00", end:"17:00", color:"#ef4444"},
+  {id:8,  first:"Jordan",  last:"Kim",      role:"Call Center",     loc:"Poway",     days:[1,2,3,4,5], start:"08:30", end:"17:30", color:"#14b8a6"},
+  {id:9,  first:"Leila",   last:"Vasquez",  role:"Ophthalmic Tech", loc:"Poway",     days:[1,2,3,4],   start:"08:00", end:"17:00", color:"#f97316"},
+  {id:10, first:"Damien",  last:"Torres",   role:"Ophthalmic Tech", loc:"Hillcrest", days:[1,2,3,4,5], start:"08:00", end:"16:30", color:"#06b6d4"},
+  {id:11, first:"Yuna",    last:"Park",     role:"Front Desk",      loc:"Hillcrest", days:[1,2,3,4,5], start:"07:30", end:"16:30", color:"#84cc16"},
+  {id:12, first:"Rachel",  last:"Monroe",   role:"Ophthalmic Tech", loc:"La Jolla",  days:[1,2,3,4,5], start:"08:00", end:"17:00", color:"#a78bfa", pto:true, ptoNote:"PTO — returns Monday"},
+];
+const LOCS = ["All","La Jolla","Poway","Hillcrest"];
+const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const REPLY_POOL = ["Got it, thank you!","On it — will handle right away.","Understood, thanks.","Sure, I'll take care of that.","Thanks Dr. London, noted."];
+const FEATURES = [
+  ["📅","Schedule-aware","Reads Google Calendar — knows who's on duty right now"],
+  ["⏰","Held delivery","Off-duty messages queue and deliver at shift start"],
+  ["🚨","Urgent override","Send now with automatic alert to Practice Administrator"],
+  ["💬","Two-way SMS","Staff replies forward to your cell automatically"],
+];
+
+// ── State ─────────────────────────────────────────────────────
+let state = {
+  tab: "compose",
+  search: "",
+  loc: "All",
+  selected: null,
+  message: "",
+  warn: false,
+  queue: [],
+  sent: [],
+  replies: {},
+  showSim: false,
+  simH: new Date().getHours(),
+  simM: new Date().getMinutes(),
+  simD: new Date().getDay(),
+};
+
+function getStatus(s){
+  if(s.pto) return "pto";
+  const {days,start,end} = s;
+  if(!days.includes(state.simD)) return "off";
+  const [sh,sm]=start.split(":").map(Number);
+  const [eh,em]=end.split(":").map(Number);
+  const now = state.simH*60+state.simM;
+  return (now>=sh*60+sm && now<eh*60+em) ? "on" : "off";
+}
+
+function nextShift(s){
+  if(s.pto) return s.ptoNote||"On PTO";
+  const [sh]=s.start.split(":").map(Number);
+  const h12=sh>12?sh-12:sh===0?12:sh, ampm=sh>=12?"PM":"AM";
+  for(let i=1;i<=7;i++){
+    if(s.days.includes((state.simD+i)%7)) return `${DAYS[(state.simD+i)%7]} at ${h12}:00 ${ampm}`;
+  }
+  return "Next shift";
+}
+
+function pad(n){return String(n).padStart(2,"0")}
+
+function staffWithStatus(){
+  return STAFF.map(s=>({...s, status:getStatus(s), next:nextShift(s)}));
+}
+
+// ── Render helpers ────────────────────────────────────────────
+function avatar(s, size=38){
+  const ini = (s.first[0]+(s.last[0]||"")).toUpperCase();
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${s.color}22;color:${s.color};font-size:${Math.round(size*.34)}px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;letter-spacing:-0.5px">${ini}</div>`;
+}
+
+function badge(status){
+  const cfg={on:{bg:"#dcfce7",c:"#15803d",dot:"#22c55e",l:"On duty"},off:{bg:"#f1f5f9",c:"#64748b",dot:"#94a3b8",l:"Off duty"},pto:{bg:"#fee2e2",c:"#dc2626",dot:"#ef4444",l:"On PTO"}}[status]||{};
+  return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:${cfg.bg};color:${cfg.c};flex-shrink:0"><span style="width:6px;height:6px;border-radius:50%;background:${cfg.dot};display:inline-block"></span>${cfg.l}</span>`;
+}
+
+function phoneDemo(s){ return `+1 (619) 555-${String(s.id).padStart(4,"0")}`; }
+
+// ── Toast ─────────────────────────────────────────────────────
+let toastTimer=null;
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.style.display="block";
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.style.display="none",3200);
+}
+
+// ── Actions ───────────────────────────────────────────────────
+function selectStaff(id){
+  const s=staffWithStatus().find(x=>x.id===id);
+  state.selected=s; state.warn=false;
+  render();
+  setTimeout(()=>document.getElementById("msg-input")?.focus(),50);
+}
+function clearSelected(){ state.selected=null; state.warn=false; render(); }
+function setTab(t){ state.tab=t; render(); }
+function setLoc(l){ state.loc=l; render(); }
+
+function handleSend(force=false){
+  const {selected,message} = state;
+  if(!selected||!message.trim()) return;
+  if(selected.status!=="on"&&!force){ state.warn=true; render(); return; }
+  state.warn=false;
+  state.sent.push({id:Date.now(),staff:selected,message,urgent:force,time:`${pad(state.simH)}:${pad(state.simM)}`});
+  toast(`SMS sent to ${selected.first} ${phoneDemo(selected)}${force?" · Vanessa notified":""}`);
+  const sid=selected.id;
+  setTimeout(()=>{
+    state.replies[sid]=REPLY_POOL[sid%REPLY_POOL.length];
+    toast(`Reply from ${selected.first}: "${state.replies[sid]}"`);
+    render();
+  },2200);
+  state.message=""; state.selected=null;
+  render();
+}
+
+function holdMsg(){
+  const s=state.selected;
+  state.queue.push({id:Date.now(),staff:s,message:state.message,deliverAt:s.next});
+  toast(`Held — delivers ${s.next}`);
+  state.message=""; state.selected=null; state.warn=false;
+  render();
+}
+
+function cancelQueued(id){
+  state.queue=state.queue.filter(q=>q.id!==id);
+  render();
+}
+
+// ── Update send button state without full re-render ──
+function updateSendBtn(){
+  const btn=document.getElementById("send-btn");
+  if(!btn) return;
+  const active = state.message.trim() && state.selected;
+  btn.style.background = active ? "#1e3a5f" : "#f1f5f9";
+  btn.style.color = active ? "#fff" : "#94a3b8";
+  btn.style.cursor = active ? "pointer" : "default";
+  btn.style.boxShadow = active ? "0 2px 12px rgba(30,58,95,0.25)" : "none";
+}
+
+// ── Staff list HTML helper (used by render and filterList) ──
+function staffListHTML(list){
+  if(!list.length) return '<div style="padding:16px;font-size:13px;color:#94a3b8">No staff found</div>';
+  return list.map((s,i)=>`
+    <div class="sr-row" onclick="selectStaff(${s.id})" style="display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:${i<list.length-1?"1px solid #f8fafc":"none"};background:#fff;transition:background 0.1s">
+      ${avatar(s)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600;color:#0f172a">${s.first} ${s.last}
+          <span style="font-size:11px;font-weight:500;color:#94a3b8;background:#f1f5f9;padding:1px 7px;border-radius:5px;margin-left:7px">${s.loc}</span>
+        </div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:1px">${s.role}</div>
+      </div>
+      ${badge(s.status)}
+    </div>`).join("");
+}
+
+// ── Live search — only updates the list div, never destroys the input ──
+function filterList(val){
+  state.search=val;
+  const sl=document.getElementById("staff-list");
+  if(!sl) return;
+  const sws=staffWithStatus();
+  const q=val.toLowerCase();
+  const filtered=sws.filter(s=>{
+    const mL=state.loc==="All"||s.loc===state.loc;
+    const mQ=!q||s.first.toLowerCase().includes(q)||s.last.toLowerCase().includes(q)||s.role.toLowerCase().includes(q);
+    return mL&&mQ;
+  });
+  sl.innerHTML=staffListHTML(filtered);
+}
+
+// ── Main render ───────────────────────────────────────────────
+function render(){
+  const app=document.getElementById("app");
+  const sws=staffWithStatus();
+  const onCount=sws.filter(s=>s.status==="on").length;
+  const sel=state.selected?sws.find(x=>x.id===state.selected.id):null;
+
+  const filtered=sws.filter(s=>{
+    const mL=state.loc==="All"||s.loc===state.loc;
+    const q=state.search.toLowerCase();
+    const mQ=!q||s.first.toLowerCase().includes(q)||s.last.toLowerCase().includes(q)||s.role.toLowerCase().includes(q);
+    return mL&&mQ;
+  });
+
+  // Header
+  let html=`
+    <div style="background:#fff;padding:18px 20px 0;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px">RCSD</div>
+          <div style="font-size:24px;font-weight:700;color:#0f172a;letter-spacing:-0.03em;line-height:1">StaffReach</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:4px">${DAYS[state.simD]} ${pad(state.simH)}:${pad(state.simM)}</div>
+          <button onclick="state.showSim=!state.showSim;render()" style="font-size:11px;font-weight:500;color:${state.showSim?"#1e3a5f":"#64748b"};background:${state.showSim?"#e8f0fe":"#f1f5f9"};border:none;border-radius:6px;padding:3px 8px;cursor:pointer">
+            ${state.showSim?"▲ Hide sim":"⏱ Time sim"}
+          </button>
+        </div>
+      </div>`;
+
+  // Sim panel
+  if(state.showSim){
+    html+=`<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;margin-bottom:12px;border:1px solid #e2e8f0;animation:fadeIn 0.2s ease">
+      <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em">Simulate time — watch duty status update live</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+        ${DAYS.map((d,i)=>`<button onclick="state.simD=${i};render()" style="padding:5px 10px;font-size:11px;font-weight:600;border-radius:7px;border:none;cursor:pointer;background:${state.simD===i?"#1e3a5f":"#e2e8f0"};color:${state.simD===i?"#fff":"#64748b"};transition:all 0.15s">${d}</button>`).join("")}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:12px;color:#64748b;min-width:40px">Hour</span>
+        <input type="range" min="0" max="23" value="${state.simH}" oninput="state.simH=+this.value;render()" style="flex:1;accent-color:#1e3a5f"/>
+        <span style="font-size:12px;font-weight:700;color:#1e3a5f;min-width:36px;text-align:right">${pad(state.simH)}:00</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:12px;color:#64748b;min-width:40px">Min</span>
+        <input type="range" min="0" max="59" step="5" value="${state.simM}" oninput="state.simM=+this.value;render()" style="flex:1;accent-color:#1e3a5f"/>
+        <span style="font-size:12px;font-weight:700;color:#1e3a5f;min-width:36px;text-align:right">${pad(state.simM)}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        ${[["Business hours",9,0,1],["After 5pm",18,30,1],["Saturday",10,0,6],["Sunday 8pm",20,0,0]].map(([l,h,m,d])=>
+          `<button class="preset-btn" onclick="state.simH=${h};state.simM=${m};state.simD=${d};render()" style="padding:4px 10px;font-size:11px;font-weight:500;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;color:#374151">${l}</button>`
+        ).join("")}
+      </div>
+      <div style="font-size:11px;color:#94a3b8;display:flex;gap:16px">
+        <span><span style="color:#22c55e;font-weight:700">●</span> ${onCount} on duty</span>
+        <span><span style="color:#94a3b8;font-weight:700">●</span> ${sws.length-onCount} off/PTO</span>
+      </div>
+    </div>`;
+  }
+
+  // Tabs
+  html+=`<div style="display:flex;gap:2px">
+    ${["compose","queue","sent"].map(t=>`
+      <button class="sr-tab" onclick="setTab('${t}')" style="padding:8px 16px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2.5px solid ${state.tab===t?"#1e3a5f":"transparent"};color:${state.tab===t?"#0f172a":"#94a3b8"};border-radius:6px 6px 0 0;transition:all 0.15s">
+        ${t==="queue"&&state.queue.length>0?`Queue (${state.queue.length})`:t==="sent"&&state.sent.length>0?`Sent (${state.sent.length})`:t.charAt(0).toUpperCase()+t.slice(1)}
+      </button>`).join("")}
+  </div></div>`; // close header div
+
+  // ── COMPOSE ──
+  if(state.tab==="compose"){
+    html+=`<div style="padding:20px;animation:slideUp 0.25s ease">`;
+
+    if(!sel){
+      html+=`
+        <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">To</div>
+        <input id="search-input" oninput="filterList(this.value)" placeholder="Search staff…"
+          style="width:100%;padding:9px 13px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;color:#0f172a;margin-bottom:8px"/>
+        <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
+          ${LOCS.map(l=>`<button class="loc-btn" onclick="setLoc('${l}')" style="padding:4px 12px;border-radius:20px;border:1px solid ${state.loc===l?"#1e3a5f":"#e2e8f0"};font-size:12px;font-weight:500;cursor:pointer;background:${state.loc===l?"#1e3a5f":"transparent"};color:${state.loc===l?"#fff":"#64748b"};transition:all 0.15s">${l}</button>`).join("")}
+        </div>
+        <div id="staff-list" style="border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+          ${staffListHTML(filtered)}
+        </div>`;
+    } else {
+      // Selected state
+      html+=`
+        <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">To</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:12px">
+          ${avatar(sel,34)}
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:#0f172a">${sel.first} ${sel.last}</div>
+            <div style="font-size:12px;color:#94a3b8">${sel.role} · ${sel.loc}</div>
+          </div>
+          ${badge(sel.status)}
+          <button onclick="clearSelected()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1;padding:0 2px">×</button>
+        </div>
+
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#64748b;line-height:1.85">
+          ${sel.status==="on"?`<strong style="color:#0f172a">On duty</strong> · Shift ends ${sel.end}<br><span style="color:#22c55e;font-size:11px">📱 Demo: ${phoneDemo(sel)} · SMS ready</span>`:""}
+          ${sel.status==="pto"?`<strong style="color:#dc2626">On PTO</strong> · ${sel.ptoNote}<br><span style="color:#94a3b8;font-size:11px">⏰ Next shift: ${sel.next}</span>`:""}
+          ${sel.status==="off"?`<strong style="color:#64748b">Off duty</strong> · Hours: ${sel.start}–${sel.end}<br><span style="color:#94a3b8;font-size:11px">⏰ Next shift: ${sel.next}</span>`:""}
+        </div>`;
+
+      // Reply badge
+      if(state.replies[sel.id]){
+        html+=`<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:9px 14px;margin-bottom:12px;font-size:12px;color:#166534;display:flex;gap:8px;align-items:flex-start">
+          <span style="font-size:16px">💬</span>
+          <div><strong>Reply from ${sel.first}:</strong> "${state.replies[sel.id]}"<br><span style="font-size:11px;color:#4ade80">Forwarded to your cell</span></div>
+        </div>`;
+      }
+
+      // Warning
+      if(state.warn){
+        html+=`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:16px;margin-bottom:14px;animation:slideUp 0.2s ease">
+          <div style="font-size:15px;font-weight:700;color:#92400e;margin-bottom:6px">
+            ${sel.first} is ${sel.status==="pto"?"on approved PTO":"off duty"}
+          </div>
+          <div style="font-size:13px;color:#92400e;opacity:0.9;line-height:1.6;margin-bottom:14px">
+            ${sel.status==="pto"
+              ?`${sel.ptoNote}. Contacting staff on approved leave may constitute compensable work under California labor law. Vanessa Macias will be notified of any urgent override.`
+              :`Reaching out outside scheduled hours (${sel.start}–${sel.end}) may require California labor compensation. Next shift: ${sel.next}.`}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button onclick="holdMsg()" style="padding:11px 14px;border-radius:10px;border:1px solid #d1d5db;background:#fff;font-size:13px;font-weight:600;cursor:pointer;color:#0f172a;text-align:left">
+              ⏰ Hold — deliver ${sel.next}
+            </button>
+            <button onclick="handleSend(true)" style="padding:11px 14px;border-radius:10px;border:1px solid #fca5a5;background:#fff5f5;font-size:13px;font-weight:600;cursor:pointer;color:#dc2626;text-align:left">
+              🚨 Send urgent now — notify Vanessa
+            </button>
+            <button onclick="state.warn=false;render()" style="padding:9px;border-radius:10px;border:none;background:transparent;font-size:12px;cursor:pointer;color:#94a3b8">
+              Cancel
+            </button>
+          </div>
+        </div>`;
+      }
+    }
+
+    // Message box + send
+    html+=`
+      <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;margin-top:${sel?0:16}px">Message</div>
+      <textarea id="msg-input" rows="4" oninput="state.message=this.value;updateSendBtn()"
+        placeholder="${sel?"Type your message to "+sel.first+"…":"Select a staff member above, then type your message…"}"
+        style="width:100%;padding:11px 13px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;font-size:14px;color:#0f172a;resize:none;line-height:1.6;margin-bottom:14px">${state.message}</textarea>
+      <button id="send-btn" class="sr-btn-primary" onclick="handleSend(false)"
+        style="width:100%;padding:13px;border-radius:12px;border:none;background:${sel&&state.message.trim()?"#1e3a5f":"#f1f5f9"};color:${sel&&state.message.trim()?"#fff":"#94a3b8"};font-size:14px;font-weight:700;cursor:${sel&&state.message.trim()?"pointer":"not-allowed"};transition:all 0.15s;box-shadow:${sel&&state.message.trim()?"0 2px 12px rgba(30,58,95,0.25)":"none"}">
+        ${sel&&sel.status==="on"?`Send SMS to ${sel.first} (demo)`:sel?"Send Message":"Select a recipient to send"}
+      </button>
+    </div>`;
+  }
+
+  // ── QUEUE ──
+  else if(state.tab==="queue"){
+    html+=`<div style="padding:20px;animation:slideUp 0.25s ease">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:14px">Messages held for delivery at next shift start.</div>`;
+    if(state.queue.length===0){
+      html+=`<div style="text-align:center;padding:40px 0;color:#cbd5e1">
+        <div style="font-size:40px;margin-bottom:8px">📭</div>
+        <div style="font-size:14px;font-weight:500">No messages queued</div>
+        <div style="font-size:12px;margin-top:4px">Select an off-duty staff member and hold a message</div>
+      </div>`;
+    } else {
+      state.queue.forEach(q=>{
+        html+=`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:14px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            ${avatar(q.staff,30)}
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#0f172a">${q.staff.first} ${q.staff.last}</div>
+              <div style="font-size:11px;color:#94a3b8">${q.staff.role}</div>
+            </div>
+          </div>
+          <div style="font-size:13px;color:#374151;line-height:1.5;padding:8px 10px;background:#fff;border-radius:8px;margin-bottom:10px">${q.message}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:12px;color:#d97706;font-weight:500">⏰ Delivers ${q.deliverAt}</span>
+            <button onclick="cancelQueued(${q.id})" style="background:none;border:1px solid #fca5a5;color:#dc2626;font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;cursor:pointer">Cancel</button>
+          </div>
+        </div>`;
+      });
+    }
+    html+=`</div>`;
+  }
+
+  // ── SENT ──
+  else if(state.tab==="sent"){
+    html+=`<div style="padding:20px;animation:slideUp 0.25s ease">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:14px">Compliance log — all messages sent this demo session.</div>`;
+    if(state.sent.length===0){
+      html+=`<div style="text-align:center;padding:40px 0;color:#cbd5e1">
+        <div style="font-size:40px;margin-bottom:8px">📋</div>
+        <div style="font-size:14px;font-weight:500">No messages sent yet</div>
+        <div style="font-size:12px;margin-top:4px">Messages you send appear here for the audit trail</div>
+      </div>`;
+    } else {
+      [...state.sent].reverse().forEach(s=>{
+        html+=`<div style="border-bottom:1px solid #f1f5f9;padding:12px 0;display:flex;gap:10px;align-items:flex-start">
+          ${avatar(s.staff,30)}
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+              <span style="font-size:13px;font-weight:600;color:#0f172a">${s.staff.first} ${s.staff.last}</span>
+              ${s.urgent?`<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 7px;border-radius:5px">URGENT</span>`:""}
+              <span style="font-size:11px;color:#94a3b8;margin-left:auto">${s.time}</span>
+            </div>
+            <div style="font-size:12px;color:#64748b;line-height:1.5">${s.message}</div>
+            ${state.replies[s.staff.id]?`<div style="font-size:11px;color:#166534;background:#f0fdf4;padding:4px 8px;border-radius:6px;margin-top:4px">💬 Reply: "${state.replies[s.staff.id]}"</div>`:""}
+          </div>
+        </div>`;
+      });
+    }
+    html+=`</div>`;
+  }
+
+  app.innerHTML=html;
+
+  // Restore textarea cursor
+  const ta=document.getElementById("msg-input");
+  if(ta){ ta.value=state.message; ta.setSelectionRange(ta.value.length,ta.value.length); }
+
+}
+
+// ── Feature cards ─────────────────────────────────────────────
+function renderFeatures(){
+  const fc=document.getElementById("features");
+  fc.innerHTML=FEATURES.map(([icon,title,desc])=>`
+    <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e2e8f0">
+      <div style="font-size:18px;margin-bottom:5px">${icon}</div>
+      <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:2px">${title}</div>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.4">${desc}</div>
+    </div>`).join("");
+}
+
+render();
+renderFeatures();
+</script>
+</body>
+</html>
