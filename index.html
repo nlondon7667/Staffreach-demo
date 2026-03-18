@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>StaffReach — RCSD Demo</title>
+<title>StaffReach — RCSD Demo (Google Chat + SMS)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -31,7 +31,7 @@
     <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;animation:pulse 2s infinite"></span>
     <span style="font-size:12px;font-weight:700;color:#e0eeff;letter-spacing:0.05em">STAFFREACH DEMO</span>
   </div>
-  <span style="font-size:11px;color:#93b8d8">Fictional staff · No real SMS sent</span>
+  <span id="banner-channel" style="font-size:11px;color:#93b8d8">Fictional staff · No real messages sent</span>
 </div>
 
 <!-- App shell -->
@@ -46,27 +46,32 @@
 <script>
 // ── Data ──────────────────────────────────────────────────────
 const STAFF = [
-  {id:1,  first:"Marcus",  last:"Webb",     role:"Ophthalmic Tech", loc:"La Jolla",  days:[1,2,3,4,5], start:"07:30", end:"16:30", color:"#6366f1"},
-  {id:2,  first:"Diana",   last:"Reyes",    role:"Scribe",          loc:"La Jolla",  days:[1,2,3,4,5], start:"07:30", end:"16:00", color:"#0ea5e9"},
-  {id:3,  first:"Priya",   last:"Sharma",   role:"Front Desk",      loc:"La Jolla",  days:[1,2,3,4,5], start:"08:00", end:"17:00", color:"#10b981"},
-  {id:4,  first:"Connor",  last:"Blake",    role:"Ophthalmic Tech", loc:"La Jolla",  days:[2,3,4,5,6], start:"08:00", end:"17:00", color:"#f59e0b"},
-  {id:5,  first:"Amara",   last:"Osei",     role:"Scribe",          loc:"La Jolla",  days:[1,2,3,4,5], start:"09:00", end:"18:00", color:"#ec4899"},
-  {id:6,  first:"Tyler",   last:"Nguyen",   role:"Ophthalmic Tech", loc:"Poway",     days:[1,2,3,4,5], start:"07:30", end:"16:30", color:"#8b5cf6"},
-  {id:7,  first:"Fatima",  last:"Hassan",   role:"Front Desk",      loc:"Poway",     days:[1,2,3,4,5], start:"08:00", end:"17:00", color:"#ef4444"},
-  {id:8,  first:"Jordan",  last:"Kim",      role:"Call Center",     loc:"Poway",     days:[1,2,3,4,5], start:"08:30", end:"17:30", color:"#14b8a6"},
-  {id:9,  first:"Leila",   last:"Vasquez",  role:"Ophthalmic Tech", loc:"Poway",     days:[1,2,3,4],   start:"08:00", end:"17:00", color:"#f97316"},
-  {id:10, first:"Damien",  last:"Torres",   role:"Ophthalmic Tech", loc:"Hillcrest", days:[1,2,3,4,5], start:"08:00", end:"16:30", color:"#06b6d4"},
-  {id:11, first:"Yuna",    last:"Park",     role:"Front Desk",      loc:"Hillcrest", days:[1,2,3,4,5], start:"07:30", end:"16:30", color:"#84cc16"},
-  {id:12, first:"Rachel",  last:"Monroe",   role:"Ophthalmic Tech", loc:"La Jolla",  days:[1,2,3,4,5], start:"08:00", end:"17:00", color:"#a78bfa", pto:true, ptoNote:"PTO — returns Monday"},
+  {id:1,  first:"Marcus",  last:"Webb",     role:"Ophthalmic Tech", loc:"La Jolla",  days:[1,2,3,4,5], start:"07:30", end:"16:30", color:"#6366f1", email:"marcus.webb@rcsd.com",    phone:"+16195550001"},
+  {id:2,  first:"Diana",   last:"Reyes",    role:"Scribe",          loc:"La Jolla",  days:[1,2,3,4,5], start:"07:30", end:"16:00", color:"#0ea5e9", email:"diana.reyes@rcsd.com",    phone:"+16195550002"},
+  {id:3,  first:"Priya",   last:"Sharma",   role:"Front Desk",      loc:"La Jolla",  days:[1,2,3,4,5], start:"08:00", end:"17:00", color:"#10b981", email:"priya.sharma@rcsd.com",   phone:"+16195550003"},
+  {id:4,  first:"Connor",  last:"Blake",    role:"Ophthalmic Tech", loc:"La Jolla",  days:[2,3,4,5,6], start:"08:00", end:"17:00", color:"#f59e0b", email:"connor.blake@rcsd.com",   phone:"+16195550004"},
+  {id:5,  first:"Amara",   last:"Osei",     role:"Scribe",          loc:"La Jolla",  days:[1,2,3,4,5], start:"09:00", end:"18:00", color:"#ec4899", email:"amara.osei@rcsd.com",     phone:"+16195550005"},
+  {id:6,  first:"Tyler",   last:"Nguyen",   role:"Ophthalmic Tech", loc:"Poway",     days:[1,2,3,4,5], start:"07:30", end:"16:30", color:"#8b5cf6", email:"tyler.nguyen@rcsd.com",   phone:"+16195550006"},
+  {id:7,  first:"Fatima",  last:"Hassan",   role:"Front Desk",      loc:"Poway",     days:[1,2,3,4,5], start:"08:00", end:"17:00", color:"#ef4444", email:"fatima.hassan@rcsd.com",  phone:"+16195550007"},
+  {id:8,  first:"Jordan",  last:"Kim",      role:"Call Center",     loc:"Poway",     days:[1,2,3,4,5], start:"08:30", end:"17:30", color:"#14b8a6", email:"jordan.kim@rcsd.com",     phone:"+16195550008"},
+  {id:9,  first:"Leila",   last:"Vasquez",  role:"Ophthalmic Tech", loc:"Poway",     days:[1,2,3,4],   start:"08:00", end:"17:00", color:"#f97316", email:"leila.vasquez@rcsd.com",  phone:"+16195550009"},
+  {id:10, first:"Damien",  last:"Torres",   role:"Ophthalmic Tech", loc:"Hillcrest", days:[1,2,3,4,5], start:"08:00", end:"16:30", color:"#06b6d4", email:"damien.torres@rcsd.com",  phone:"+16195550010"},
+  {id:11, first:"Yuna",    last:"Park",     role:"Front Desk",      loc:"Hillcrest", days:[1,2,3,4,5], start:"07:30", end:"16:30", color:"#84cc16", email:"yuna.park@rcsd.com",      phone:"+16195550011"},
+  {id:12, first:"Rachel",  last:"Monroe",   role:"Ophthalmic Tech", loc:"La Jolla",  days:[1,2,3,4,5], start:"08:00", end:"17:00", color:"#a78bfa", email:"rachel.monroe@rcsd.com",  phone:"+16195550012", pto:true, ptoNote:"PTO — returns Monday"},
 ];
 const LOCS = ["All","La Jolla","Poway","Hillcrest"];
 const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const REPLY_POOL = ["Got it, thank you!","On it — will handle right away.","Understood, thanks.","Sure, I'll take care of that.","Thanks Dr. London, noted."];
+const CHANNELS = [
+  {id:"chat", label:"Google Chat", icon:"💬", color:"#1a73e8"},
+  {id:"sms",  label:"SMS",         icon:"📱", color:"#16a34a"},
+];
+
 const FEATURES = [
   ["📅","Schedule-aware","Reads Google Calendar — knows who's on duty right now"],
   ["⏰","Held delivery","Off-duty messages queue and deliver at shift start"],
   ["🚨","Urgent override","Send now with automatic alert to Practice Administrator"],
-  ["💬","Two-way SMS","Staff replies forward to your cell automatically"],
+  ["↔️","Two-way messaging","Staff replies come back to you — via Chat thread or SMS forward"],
 ];
 
 // ── State ─────────────────────────────────────────────────────
@@ -84,6 +89,7 @@ let state = {
   simH: new Date().getHours(),
   simM: new Date().getMinutes(),
   simD: new Date().getDay(),
+  channel: "chat",
 };
 
 function getStatus(s){
@@ -123,7 +129,11 @@ function badge(status){
   return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:${cfg.bg};color:${cfg.c};flex-shrink:0"><span style="width:6px;height:6px;border-radius:50%;background:${cfg.dot};display:inline-block"></span>${cfg.l}</span>`;
 }
 
-function phoneDemo(s){ return `+1 (619) 555-${String(s.id).padStart(4,"0")}`; }
+function contactInfo(s){
+  if(state.channel==="chat") return s.email;
+  return s.phone ? `(${s.phone.slice(2,5)}) ${s.phone.slice(5,8)}-${s.phone.slice(8)}` : "No phone on file";
+}
+function phoneDemo(s){ return s.phone ? `(${s.phone.slice(2,5)}) ${s.phone.slice(5,8)}-${s.phone.slice(8)}` : "No phone"; }
 
 // ── Toast ─────────────────────────────────────────────────────
 let toastTimer=null;
@@ -150,12 +160,15 @@ function handleSend(force=false){
   if(!selected||!message.trim()) return;
   if(selected.status!=="on"&&!force){ state.warn=true; render(); return; }
   state.warn=false;
-  state.sent.push({id:Date.now(),staff:selected,message,urgent:force,time:`${pad(state.simH)}:${pad(state.simM)}`});
-  toast(`SMS sent to ${selected.first} ${phoneDemo(selected)}${force?" · Vanessa notified":""}`);
+  state.sent.push({id:Date.now(),staff:selected,message,urgent:force,channel:state.channel,time:`${pad(state.simH)}:${pad(state.simM)}`});
+  const dest = state.channel==="chat" ? selected.email : phoneDemo(selected);
+  const method = state.channel==="chat" ? "Chat DM" : "SMS";
+  toast(`${method} sent to ${selected.first} (${dest})${force?" · Vanessa notified":""}`);
   const sid=selected.id;
   setTimeout(()=>{
     state.replies[sid]=REPLY_POOL[sid%REPLY_POOL.length];
-    toast(`Reply from ${selected.first}: "${state.replies[sid]}"`);
+    const replyMethod = state.channel==="chat" ? "Chat" : "SMS";
+    toast(`${replyMethod} reply from ${selected.first}: "${state.replies[sid]}"`);
     render();
   },2200);
   state.message=""; state.selected=null;
@@ -164,8 +177,9 @@ function handleSend(force=false){
 
 function holdMsg(){
   const s=state.selected;
-  state.queue.push({id:Date.now(),staff:s,message:state.message,deliverAt:s.next});
-  toast(`Held — delivers ${s.next}`);
+  state.queue.push({id:Date.now(),staff:s,message:state.message,channel:state.channel,deliverAt:s.next});
+  const holdMethod = state.channel==="chat" ? "Chat DM" : "SMS";
+  toast(`Held — ${holdMethod} delivers ${s.next}`);
   state.message=""; state.selected=null; state.warn=false;
   render();
 }
@@ -196,7 +210,7 @@ function staffListHTML(list){
         <div style="font-size:14px;font-weight:600;color:#0f172a">${s.first} ${s.last}
           <span style="font-size:11px;font-weight:500;color:#94a3b8;background:#f1f5f9;padding:1px 7px;border-radius:5px;margin-left:7px">${s.loc}</span>
         </div>
-        <div style="font-size:12px;color:#94a3b8;margin-top:1px">${s.role}</div>
+        <div style="font-size:11px;margin-top:1px;color:${state.channel==='chat'?'#1a73e8':'#64748b'}">${state.channel==='chat'?s.email:phoneDemo(s)}</div>
       </div>
       ${badge(s.status)}
     </div>`).join("");
@@ -245,6 +259,11 @@ function render(){
             ${state.showSim?"▲ Hide sim":"⏱ Time sim"}
           </button>
         </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        ${CHANNELS.map(ch=>`<button onclick="state.channel='${ch.id}';render()" style="flex:1;padding:7px 10px;border-radius:9px;border:1.5px solid ${state.channel===ch.id?ch.color:'#e2e8f0'};background:${state.channel===ch.id?ch.color+'14':'transparent'};color:${state.channel===ch.id?ch.color:'#94a3b8'};font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.15s">
+          <span style="font-size:13px">${ch.icon}</span>${ch.label}
+        </button>`).join("")}
       </div>`;
 
   // Sim panel
@@ -314,9 +333,26 @@ function render(){
         </div>
 
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#64748b;line-height:1.85">
-          ${sel.status==="on"?`<strong style="color:#0f172a">On duty</strong> · Shift ends ${sel.end}<br><span style="color:#22c55e;font-size:11px">📱 Demo: ${phoneDemo(sel)} · SMS ready</span>`:""}
-          ${sel.status==="pto"?`<strong style="color:#dc2626">On PTO</strong> · ${sel.ptoNote}<br><span style="color:#94a3b8;font-size:11px">⏰ Next shift: ${sel.next}</span>`:""}
-          ${sel.status==="off"?`<strong style="color:#64748b">Off duty</strong> · Hours: ${sel.start}–${sel.end}<br><span style="color:#94a3b8;font-size:11px">⏰ Next shift: ${sel.next}</span>`:""}
+          ${sel.status==="on"?`<strong style="color:#0f172a">On duty</strong> · Shift ends ${sel.end}<br>
+                  ${state.channel==="chat"
+                    ?`<span style="color:#1a73e8;font-size:11px">💬 ${sel.email} · Chat ready</span>`
+                    :`<span style="color:#22c55e;font-size:11px">📱 ${phoneDemo(sel)} · SMS ready</span>`
+                  }`:""
+                }
+          ${sel.status==="pto"?`<strong style="color:#dc2626">On PTO</strong> · ${sel.ptoNote}<br>
+                  <span style="color:#94a3b8;font-size:11px">⏰ Next shift: ${sel.next}</span><br>
+                  ${state.channel==="chat"
+                    ?`<span style="color:#1a73e8;font-size:11px">💬 ${sel.email}</span>`
+                    :`<span style="color:#64748b;font-size:11px">📱 ${phoneDemo(sel)}</span>`
+                  }`:""
+                }
+          ${sel.status==="off"?`<strong style="color:#64748b">Off duty</strong> · Hours: ${sel.start}–${sel.end}<br>
+                  <span style="color:#94a3b8;font-size:11px">⏰ Next shift: ${sel.next}</span><br>
+                  ${state.channel==="chat"
+                    ?`<span style="color:#1a73e8;font-size:11px">💬 ${sel.email}</span>`
+                    :`<span style="color:#64748b;font-size:11px">📱 ${phoneDemo(sel)}</span>`
+                  }`:""
+                }
         </div>`;
 
       // Reply badge
@@ -361,7 +397,9 @@ function render(){
         style="width:100%;padding:11px 13px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;font-size:14px;color:#0f172a;resize:none;line-height:1.6;margin-bottom:14px">${state.message}</textarea>
       <button id="send-btn" class="sr-btn-primary" onclick="handleSend(false)"
         style="width:100%;padding:13px;border-radius:12px;border:none;background:${sel&&state.message.trim()?"#1e3a5f":"#f1f5f9"};color:${sel&&state.message.trim()?"#fff":"#94a3b8"};font-size:14px;font-weight:700;cursor:${sel&&state.message.trim()?"pointer":"not-allowed"};transition:all 0.15s;box-shadow:${sel&&state.message.trim()?"0 2px 12px rgba(30,58,95,0.25)":"none"}">
-        ${sel&&sel.status==="on"?`Send SMS to ${sel.first} (demo)`:sel?"Send Message":"Select a recipient to send"}
+        ${sel&&sel.status==="on"
+          ?(state.channel==="chat"?`Send Chat DM to ${sel.first} (demo)`:`Send SMS to ${sel.first} (demo)`)
+          :sel?"Send Message":"Select a recipient to send"}
       </button>
     </div>`;
   }
@@ -383,7 +421,7 @@ function render(){
             ${avatar(q.staff,30)}
             <div>
               <div style="font-size:13px;font-weight:600;color:#0f172a">${q.staff.first} ${q.staff.last}</div>
-              <div style="font-size:11px;color:#94a3b8">${q.staff.role}</div>
+              <div style="font-size:11px;color:${q.channel==='chat'?'#1a73e8':'#64748b'}">${q.channel==='chat'?`💬 ${q.staff.email}`:`📱 ${phoneDemo(q.staff)}`}</div>
             </div>
           </div>
           <div style="font-size:13px;color:#374151;line-height:1.5;padding:8px 10px;background:#fff;border-radius:8px;margin-bottom:10px">${q.message}</div>
@@ -415,6 +453,7 @@ function render(){
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
               <span style="font-size:13px;font-weight:600;color:#0f172a">${s.staff.first} ${s.staff.last}</span>
               ${s.urgent?`<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 7px;border-radius:5px">URGENT</span>`:""}
+              <span style="font-size:10px;font-weight:600;padding:1px 7px;border-radius:5px;background:${s.channel==='chat'?'#e8f0fe':'#f0fdf4'};color:${s.channel==='chat'?'#1a73e8':'#16a34a'}">${s.channel==='chat'?'💬 Chat':'📱 SMS'}</span>
               <span style="font-size:11px;color:#94a3b8;margin-left:auto">${s.time}</span>
             </div>
             <div style="font-size:12px;color:#64748b;line-height:1.5">${s.message}</div>
